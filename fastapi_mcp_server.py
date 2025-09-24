@@ -449,26 +449,36 @@ def query_backlogs_advanced(params: AdvancedQueryParams):
                 if not all(tag in backlog.tags for tag in params.tags_all):
                     continue
 
-            # Date filters
+            # Date filters - handle 'Z' timezone indicator and timezone-naive dates
+            def parse_iso_date(date_str):
+                # Replace 'Z' with '+00:00' for fromisoformat compatibility
+                if date_str and date_str.endswith('Z'):
+                    date_str = date_str[:-1] + '+00:00'
+                dt = datetime.fromisoformat(date_str)
+                # If the parsed date is timezone-aware, make it naive
+                if dt.tzinfo is not None:
+                    dt = dt.replace(tzinfo=None)
+                return dt
+
             if params.created_after:
-                if backlog.created_at < datetime.fromisoformat(params.created_after):
+                if backlog.created_at < parse_iso_date(params.created_after):
                     continue
             if params.created_before:
-                if backlog.created_at > datetime.fromisoformat(params.created_before):
+                if backlog.created_at > parse_iso_date(params.created_before):
                     continue
 
             if params.updated_after:
-                if backlog.updated_at < datetime.fromisoformat(params.updated_after):
+                if backlog.updated_at < parse_iso_date(params.updated_after):
                     continue
             if params.updated_before:
-                if backlog.updated_at > datetime.fromisoformat(params.updated_before):
+                if backlog.updated_at > parse_iso_date(params.updated_before):
                     continue
 
             if params.due_after and backlog.due_date:
-                if backlog.due_date < datetime.fromisoformat(params.due_after):
+                if backlog.due_date < parse_iso_date(params.due_after):
                     continue
             if params.due_before and backlog.due_date:
-                if backlog.due_date > datetime.fromisoformat(params.due_before):
+                if backlog.due_date > parse_iso_date(params.due_before):
                     continue
 
             # Has due date filter

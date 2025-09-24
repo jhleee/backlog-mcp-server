@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  git-chat-log:
+    build: .
+    container_name: git-chat-log-server
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./meetings:/app/meetings
+      - ./backlogs:/app/backlogs
+      - ./.git:/app/.git
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONPATH=/app
+      # OpenAI API 설정 (필요시)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      # Anthropic API 설정 (필요시)
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      # Slack 설정 (필요시)
+      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+      # Discord 설정 (필요시)
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+    env_file:
+      - .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - git-chat-network
+
+  # ChromaDB 서비스 (벡터 DB용)
+  chromadb:
+    image: chromadb/chroma:latest
+    container_name: git-chat-chromadb
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./chroma-data:/chroma/chroma
+    environment:
+      - IS_PERSISTENT=TRUE
+      - PERSIST_DIRECTORY=/chroma/chroma
+      - ANONYMIZED_TELEMETRY=FALSE
+    networks:
+      - git-chat-network
+    restart: unless-stopped
+
+networks:
+  git-chat-network:
+    driver: bridge
+
+volumes:
+  chroma-data:
+    driver: local
