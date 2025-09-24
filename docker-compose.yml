@@ -15,13 +15,13 @@ services:
       - PYTHONUNBUFFERED=1
       - PYTHONPATH=/app
       # OpenAI API 설정 (필요시)
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
+#      - OPENAI_API_KEY=${OPENAI_API_KEY}
       # Anthropic API 설정 (필요시)
-      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+#      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
       # Slack 설정 (필요시)
-      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
+#      - SLACK_WEBHOOK_URL=${SLACK_WEBHOOK_URL}
       # Discord 설정 (필요시)
-      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+#      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
     env_file:
       - .env
     restart: unless-stopped
