@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "git-chat-log": {
+      "command": "python",
+      "args": ["src/mcp_sse_server.py"],
+      "env": {
+        "HOST": "localhost",
+        "PORT": "8000",
+        "DEBUG": "false"
+      }
+    }
+  }
+}

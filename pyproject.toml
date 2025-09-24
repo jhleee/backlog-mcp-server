@@ -1,0 +1,72 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "git-chat-log"
+version = "0.1.0"
+description = "Git-based meeting and backlog management system with MCP integration"
+readme = "README_MCP.md"
+requires-python = ">=3.9"
+license = "MIT"
+authors = [
+    { name = "Git-Chat-Log Team", email = "noreply@example.com" },
+]
+dependencies = [
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "GitPython>=3.1.0",
+    "langchain>=0.1.0",
+    "langchain-openai>=0.0.5",
+    "langchain-community>=0.0.10",
+    "chromadb>=0.4.0",
+    "APScheduler>=3.10.0",
+    "python-dotenv>=1.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "mcp>=0.1.0",
+    "httpx>=0.24.0",
+    "slack-sdk>=3.0.0",
+    "discord.py>=2.3.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+git-chat-log = "git_chat_log.__main__:main"
+git-chat-log-mcp = "git_chat_log.mcp_stdio_server:main"
+git-chat-log-api = "git_chat_log.api_server:main"
+
+[project.urls]
+Homepage = "https://github.com/example/git-chat-log"
+Documentation = "https://github.com/example/git-chat-log#readme"
+Repository = "https://github.com/example/git-chat-log"
+Issues = "https://github.com/example/git-chat-log/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["git_chat_log"]
+
+[tool.hatch.envs.default]
+dependencies = [
+    "pytest",
+    "pytest-asyncio",
+]
+
+[tool.black]
+line-length = 100
+target-version = ['py39']
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]

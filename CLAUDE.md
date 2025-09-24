@@ -1,0 +1,2 @@
+- langchain 이나 langgraph를 다룰 시, context7 도구를 사용해라.
+- 작업 전후로 @TODO.md 를 확인하고, 업데이트 해라.

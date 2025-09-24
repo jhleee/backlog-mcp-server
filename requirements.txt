@@ -1,0 +1,43 @@
+# Core Framework
+fastapi
+uvicorn[standard]
+pydantic
+python-multipart
+
+# Git Integration
+GitPython
+
+# LLM & AI
+langchain
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-mcp
+chromadb
+openai
+tiktoken
+
+# Scheduling
+APScheduler
+
+# Database & Storage
+sqlalchemy
+alembic
+
+# Communication
+slack-sdk
+discord.py
+
+# Utilities
+python-dotenv
+pyyaml
+httpx
+pytest
+pytest-asyncio
+black
+flake8
+mypy
+
+# Development
+ipython
+rich
