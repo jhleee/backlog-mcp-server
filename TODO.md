@@ -7,19 +7,21 @@ Git을 백엔드로 활용하여 회의록 및 백로그를 관리하는 개발�
 
 ### 1. 프로젝트 초기 설정
 - [x] Python 프로젝트 구조 생성
-- [ ] 가상환경 설정
-- [x] requirements.txt 작성
+- [x] 가상환경 설정
+- [x] requirements.txt 작성 및 정리 (2025-09-25)
   - [x] FastAPI
   - [x] GitPython
   - [x] LangChain
   - [x] langchain-mcp-adapters
   - [x] ChromaDB
   - [x] APScheduler
-- [x] 기본 디렉토리 구조 생성
-  - [x] `/src` - 소스 코드
+  - [x] 불필요한 패키지 제거 (sqlalchemy, alembic, discord.py, slack-sdk, pytest, black, flake8, mypy, ipython, rich)
+- [x] 기본 디렉토리 구조 생성 및 정리 (2025-09-25)
+  - [x] `/src` - 소스 코드 (단일 디렉토리로 통합)
   - [x] `/tests` - 테스트 코드
   - [x] `/docs` - 문서
   - [x] `/config` - 설정 파일
+  - [x] 중복 디렉토리 제거 (git_chat_log)
 
 ### 2. Git 백엔드 시스템 구현
 #### 2.1 Git 리포지토리 관리
@@ -126,18 +128,18 @@ Git을 백엔드로 활용하여 회의록 및 백로그를 관리하는 개발�
 - [x] 도구 선택 로직
 - [x] 응답 생성 및 포매팅
 
-### 7. 챗봇 인터페이스
+### 7. 챗봇 인터페이스 (보류)
 #### 7.1 Slack Bot
-- [ ] Slack App 생성
-- [ ] 이벤트 리스너
-- [ ] 명령어 처리
-- [ ] 응답 포매팅
+- [ ] ~~Slack App 생성~~ (현재 사용하지 않음)
+- [ ] ~~이벤트 리스너~~
+- [ ] ~~명령어 처리~~
+- [ ] ~~응답 포매팅~~
 
 #### 7.2 Discord Bot
-- [ ] Discord Bot 생성
-- [ ] 명령어 등록
-- [ ] 메시지 핸들러
-- [ ] 임베드 메시지
+- [ ] ~~Discord Bot 생성~~ (현재 사용하지 않음)
+- [ ] ~~명령어 등록~~
+- [ ] ~~메시지 핸들러~~
+- [ ] ~~임베드 메시지~~
 
 ### 8. 테스트
 #### 8.1 유닛 테스트

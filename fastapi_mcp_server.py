@@ -15,16 +15,9 @@ from fastapi import FastAPI, APIRouter, Query
 from pydantic import BaseModel, Field
 from fastapi_mcp import FastApiMCP
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 # Import services
-try:
-    from src.models import Meeting, Backlog, BacklogStatus
-    from src.services import GitService, VectorService
-except ImportError:
-    sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
-    from models import Meeting, Backlog, BacklogStatus
-    from services import GitService, VectorService
+from src.models import Meeting, Backlog, BacklogStatus
+from src.services import GitService, VectorService
 
 # Setup logging
 logging.basicConfig(

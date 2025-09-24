@@ -1,5 +1,6 @@
 # Core Framework
 fastapi
+fastapi_mcp
 uvicorn[standard]
 pydantic
 python-multipart
@@ -20,24 +21,7 @@ tiktoken
 # Scheduling
 APScheduler
 
-# Database & Storage
-sqlalchemy
-alembic
-
-# Communication
-slack-sdk
-discord.py
-
 # Utilities
 python-dotenv
 pyyaml
 httpx
-pytest
-pytest-asyncio
-black
-flake8
-mypy
-
-# Development
-ipython
-rich

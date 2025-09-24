@@ -4,7 +4,11 @@ from contextlib import asynccontextmanager
 import uvicorn
 from dotenv import load_dotenv
 import os
+import sys
 import logging
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.api import mcp_tools, agent_endpoints, mcp_server
 from src.services import SchedulerService
