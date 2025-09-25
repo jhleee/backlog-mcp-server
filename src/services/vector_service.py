@@ -20,6 +20,10 @@ class VectorService:
     def _initialize_chromadb(self):
         """Initialize ChromaDB client and collection"""
         try:
+            
+            existing_collections = [c.name for c in self.client.list_collections()]
+            if settings.chroma_collection_name in existing_collections:
+                self.client.delete_collection(settings.chroma_collection_name)
             self.client = chromadb.PersistentClient(
                 path=settings.chroma_persist_directory,
                 settings=Settings(
