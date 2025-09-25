@@ -27,13 +27,16 @@ class VectorService:
                     allow_reset=True
                 )
             )
-
+    
             # Try to get existing collection first
             try:               
                 existing_collections = [c.name for c in self.client.list_collections()]
                 if settings.chroma_collection_name in existing_collections:
-                    self.client.delete_collection(settings.chroma_collection_name)
-
+                    try:
+                        self.client.delete_collection(settings.chroma_collection_name)
+                    except chromadb.errors.NotFoundError:
+                        logger.warning(f"Collection {settings.chroma_collection_name} does not exist when trying to delete.")
+    
                 self.collection = self.client.get_collection(
                     name=settings.chroma_collection_name
                 )
@@ -47,20 +50,23 @@ class VectorService:
                     )
                 else:
                     self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
-
+    
                 self.collection = self.client.create_collection(
                     name=settings.chroma_collection_name,
                     embedding_function=self.embedding_function
                 )
                 logger.info(f"Created new ChromaDB collection: {settings.chroma_collection_name}")
-
+    
         except Exception as e:
             logger.error(f"Failed to initialize ChromaDB: {e}")
             # Try to reset and create new collection
             try:
                 logger.info("Attempting to reset ChromaDB...")
-                self.client.delete_collection(settings.chroma_collection_name)
-
+                try:
+                    self.client.delete_collection(settings.chroma_collection_name)
+                except chromadb.errors.NotFoundError:
+                    logger.warning(f"Collection {settings.chroma_collection_name} does not exist when trying to reset.")
+    
                 if settings.openai_api_key:
                     self.embedding_function = embedding_functions.OpenAIEmbeddingFunction(
                         api_key=settings.openai_api_key,
@@ -68,7 +74,7 @@ class VectorService:
                     )
                 else:
                     self.embedding_function = embedding_functions.DefaultEmbeddingFunction()
-
+    
                 self.collection = self.client.create_collection(
                     name=settings.chroma_collection_name,
                     embedding_function=self.embedding_function
