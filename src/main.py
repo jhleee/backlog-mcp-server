@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from contextlib import asynccontextmanager
 import uvicorn
 from dotenv import load_dotenv
@@ -12,8 +13,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.api import mcp_tools, agent_endpoints, mcp_server
 from src.services import SchedulerService
+from config.settings import settings
 
 load_dotenv()
+
+security = HTTPBearer(auto_error=False)
 
 scheduler = SchedulerService()
 
@@ -23,6 +27,29 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+
+async def verify_api_key(credentials: HTTPAuthorizationCredentials = None) -> bool:
+    """Verify API key for authentication"""
+    if not settings.api_key:
+        # If no API key is configured, allow access (backward compatibility)
+        return True
+
+    if not credentials:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing authentication credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    if credentials.credentials != settings.api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid API key",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    return True
 
 
 @asynccontextmanager
@@ -45,17 +72,36 @@ app = FastAPI(
     description="MCP server for Git-based meeting notes and backlog management with LangChain integration",
     version="0.1.0",
     lifespan=lifespan,
-    docs_url="/docs"
+    docs_url="/docs" if settings.is_development() else None  # Disable docs in production
 
 )
 
+# CORS Configuration
+cors_origins = settings.get_cors_origins() if settings.cors_origins else ["*"]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# API Key Authentication Middleware
+@app.middleware("http")
+async def api_key_middleware(request: Request, call_next):
+    """Middleware to verify API key for protected endpoints"""
+    # Skip authentication for health check and root endpoints
+    if request.url.path in ["/", "/health"]:
+        return await call_next(request)
+
+    # Verify API key if configured
+    if settings.api_key:
+        credentials = await security(request)
+        await verify_api_key(credentials)
+
+    response = await call_next(request)
+    return response
 
 # MCP Server endpoints (primary)
 app.include_router(mcp_server.router, prefix="/mcp")
@@ -77,13 +123,10 @@ async def health_check():
     return {"status": "healthy"}
 
 if __name__ == "__main__":
-    host = os.getenv("HOST", "localhost")
-    port = int(os.getenv("PORT", 8000))
-    debug = os.getenv("DEBUG", "True").lower() == "true"
-
+    # Use settings for configuration
     uvicorn.run(
         "src.main:app",
-        host=host,
-        port=port,
-        reload=debug
+        host=settings.host,
+        port=settings.port,
+        reload=settings.reload and settings.is_development()  # Only reload in development
     )

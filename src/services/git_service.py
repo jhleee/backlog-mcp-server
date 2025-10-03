@@ -13,9 +13,36 @@ logger = logging.getLogger(__name__)
 
 class GitService:
     def __init__(self, repo_path: Optional[str] = None):
-        self.repo_path = Path(repo_path or settings.git_repo_path)
+        self.repo_path = Path(repo_path or settings.git_repo_path).resolve()
         self.repo: Optional[Repo] = None
         self._initialize_repo()
+
+    def _validate_path(self, path: str) -> Path:
+        """
+        Validate file path to prevent path traversal attacks.
+
+        Args:
+            path: Relative path to validate
+
+        Returns:
+            Resolved absolute path
+
+        Raises:
+            ValueError: If path attempts to escape repository
+        """
+        # Remove leading slashes
+        path = path.lstrip('/')
+
+        # Resolve absolute path
+        full_path = (self.repo_path / path).resolve()
+
+        # Check if path is within repository
+        try:
+            full_path.relative_to(self.repo_path)
+        except ValueError:
+            raise ValueError(f"Path traversal attempt detected: {path}")
+
+        return full_path
 
     def _initialize_repo(self) -> None:
         """Initialize or open Git repository"""
@@ -61,11 +88,12 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def create_file(self, path: str, content: str, commit_message: str) -> str:
         """Create a new file and commit it"""
-        file_path = self.repo_path / path
+        file_path = self._validate_path(path)
         file_path.parent.mkdir(parents=True, exist_ok=True)
         file_path.write_text(content, encoding='utf-8')
 
-        self.repo.index.add([path])
+        relative_path = str(file_path.relative_to(self.repo_path))
+        self.repo.index.add([relative_path])
         commit = self.repo.index.commit(commit_message)
 
         logger.info(f"Created file {path} with commit {commit.hexsha}")
@@ -73,13 +101,14 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def update_file(self, path: str, content: str, commit_message: str) -> str:
         """Update an existing file and commit changes"""
-        file_path = self.repo_path / path
+        file_path = self._validate_path(path)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File {path} does not exist")
 
         file_path.write_text(content, encoding='utf-8')
-        self.repo.index.add([path])
+        relative_path = str(file_path.relative_to(self.repo_path))
+        self.repo.index.add([relative_path])
         commit = self.repo.index.commit(commit_message)
 
         logger.info(f"Updated file {path} with commit {commit.hexsha}")
@@ -87,7 +116,7 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def read_file(self, path: str) -> str:
         """Read content from a file"""
-        file_path = self.repo_path / path
+        file_path = self._validate_path(path)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File {path} does not exist")
@@ -96,13 +125,14 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def delete_file(self, path: str, commit_message: str) -> str:
         """Delete a file and commit the deletion"""
-        file_path = self.repo_path / path
+        file_path = self._validate_path(path)
 
         if not file_path.exists():
             raise FileNotFoundError(f"File {path} does not exist")
 
         os.remove(file_path)
-        self.repo.index.remove([path])
+        relative_path = str(file_path.relative_to(self.repo_path))
+        self.repo.index.remove([relative_path])
         commit = self.repo.index.commit(commit_message)
 
         logger.info(f"Deleted file {path} with commit {commit.hexsha}")
@@ -110,7 +140,7 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def list_files(self, directory: str) -> List[str]:
         """List all files in a directory"""
-        dir_path = self.repo_path / directory
+        dir_path = self._validate_path(directory)
 
         if not dir_path.exists():
             return []
@@ -144,7 +174,10 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def search_files(self, pattern: str, directory: Optional[str] = None) -> List[str]:
         """Search for files matching a pattern"""
-        search_path = self.repo_path / directory if directory else self.repo_path
+        if directory:
+            search_path = self._validate_path(directory)
+        else:
+            search_path = self.repo_path
         matching_files = []
 
         for file_path in search_path.rglob('*.md'):
@@ -157,7 +190,7 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
 
     def archive_file(self, source_path: str, archive_reason: str) -> str:
         """Archive a file by moving it to the archives directory"""
-        source_file = self.repo_path / source_path
+        source_file = self._validate_path(source_path)
         if not source_file.exists():
             raise FileNotFoundError(f"File {source_path} does not exist")
 
@@ -168,12 +201,15 @@ This repository contains meeting notes and backlog items managed by Git-Chat-Log
         content = source_file.read_text(encoding='utf-8')
         archive_content = f"<!-- Archived: {archive_reason} -->\n{content}"
 
-        (self.repo_path / 'archives').mkdir(exist_ok=True)
-        (self.repo_path / archive_path).write_text(archive_content, encoding='utf-8')
+        archive_full_path = self._validate_path(archive_path)
+        archive_full_path.parent.mkdir(exist_ok=True)
+        archive_full_path.write_text(archive_content, encoding='utf-8')
 
         os.remove(source_file)
-        self.repo.index.remove([source_path])
-        self.repo.index.add([archive_path])
+        relative_source = str(source_file.relative_to(self.repo_path))
+        relative_archive = str(archive_full_path.relative_to(self.repo_path))
+        self.repo.index.remove([relative_source])
+        self.repo.index.add([relative_archive])
 
         commit = self.repo.index.commit(f"Archive {source_path}: {archive_reason}")
 

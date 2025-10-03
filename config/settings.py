@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from typing import Optional
+import os
 
 class Settings(BaseSettings):
     # API Keys
@@ -26,9 +27,17 @@ class Settings(BaseSettings):
     discord_channel_id: Optional[str] = None
 
     # Server Configuration
-    host: str = "0.0.0.0"
+    host: str = "localhost"  # Changed from 0.0.0.0 for security
     port: int = 8000
-    debug: bool = True
+    debug: bool = False  # Changed to False for production safety
+    reload: bool = False  # Disable reload in production
+
+    # API Security
+    api_key: Optional[str] = None  # API key for authentication
+    cors_origins: str = ""  # Comma-separated list of allowed origins
+
+    # Environment
+    environment: str = "production"  # production, development, or testing
 
     # Scheduler Configuration
     scheduler_enabled: bool = True
@@ -39,5 +48,19 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = False
+
+    def get_cors_origins(self):
+        """Parse CORS origins from comma-separated string"""
+        if self.cors_origins:
+            return [origin.strip() for origin in self.cors_origins.split(",")]
+        return []
+
+    def is_production(self) -> bool:
+        """Check if running in production environment"""
+        return self.environment.lower() == "production"
+
+    def is_development(self) -> bool:
+        """Check if running in development environment"""
+        return self.environment.lower() == "development"
 
 settings = Settings()

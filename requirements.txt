@@ -25,3 +25,6 @@ APScheduler
 python-dotenv
 pyyaml
 httpx
+
+# Security
+pydantic-settings  # Secure settings management
