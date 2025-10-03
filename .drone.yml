@@ -3,6 +3,7 @@ type: docker
 name: default
 
 steps:
+  # push 또는 custom 이벤트 발생 시 실행
   - name: build-and-push
     image: plugins/docker
     settings:
@@ -16,14 +17,19 @@ steps:
         - latest
         - ${DRONE_COMMIT_SHA:0:8}
         - ${DRONE_BRANCH}
-      auto_tag: true
-      auto_tag_suffix: ${DRONE_BUILD_NUMBER}
+      # auto_tag가 ${DRONE_BRANCH}와 중복되므로 제거
+      # auto_tag: true
+      # auto_tag_suffix: ${DRONE_BUILD_NUMBER}
     when:
-      branch:
-        - master
+      # 이 스텝의 실행 조건을 여기에 명시
       event:
         - push
+        - custom
+      branch: # 브랜치 조건을 스텝 레벨로 이동
+        - master
+        - main
 
+  # tag 이벤트 발생 시 실행
   - name: build-and-push-tag
     image: plugins/docker
     settings:
@@ -40,10 +46,10 @@ steps:
       event:
         - tag
 
+# 파이프라인 전체 실행 조건
 trigger:
-  branch:
-    - master
   event:
     - push
     - tag
     - custom
+    - promote
