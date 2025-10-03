@@ -46,3 +46,4 @@ trigger:
   event:
     - push
     - tag
+    - custom
