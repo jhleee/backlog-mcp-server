@@ -16,22 +16,32 @@ steps:
         - pull_request
         - custom
 
-  # main/master 브랜치에 push 또는 custom 이벤트 시 도커 이미지 빌드 및 푸시
+  # main/master 브랜치에 push 또는 custom 이벤트 시 도커 이미지 빌드 및 푸시 (멀티 플랫폼)
   - name: build-and-push-branch
-    image: plugins/docker
-    settings:
-      registry: ghcr.io
-      repo: ghcr.io/jhleee/backlog-mcp-server
-      username:
+    image: docker:dind
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      GITHUB_USERNAME:
         from_secret: github_username
-      password:
+      GITHUB_TOKEN:
         from_secret: github_token
-      tags:
-        - latest
-        - "commit-${DRONE_COMMIT_SHA:0:8}"
-        - "${DRONE_BRANCH}"
-      dockerfile: Dockerfile
-      context: .
+    commands:
+      # Docker Buildx 설정
+      - docker buildx create --use --name multiarch-builder || docker buildx use multiarch-builder
+      # GitHub Container Registry 로그인
+      - echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+      # 멀티 플랫폼 빌드 및 푸시
+      - |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64,linux/arm/v7 \
+          --tag ghcr.io/jhleee/backlog-mcp-server:latest \
+          --tag ghcr.io/jhleee/backlog-mcp-server:commit-${DRONE_COMMIT_SHA:0:8} \
+          --tag ghcr.io/jhleee/backlog-mcp-server:${DRONE_BRANCH} \
+          --push \
+          -f Dockerfile \
+          .
     when:
       event:
         - push
@@ -42,26 +52,42 @@ steps:
     depends_on:
       - lint-and-check
 
-  # 태그 이벤트 발생 시 도커 이미지 빌드 및 푸시
+  # 태그 이벤트 발생 시 도커 이미지 빌드 및 푸시 (멀티 플랫폼)
   - name: build-and-push-tag
-    image: plugins/docker
-    settings:
-      registry: ghcr.io
-      repo: ghcr.io/jhleee/backlog-mcp-server
-      username:
+    image: docker:dind
+    volumes:
+      - name: dockersock
+        path: /var/run/docker.sock
+    environment:
+      GITHUB_USERNAME:
         from_secret: github_username
-      password:
+      GITHUB_TOKEN:
         from_secret: github_token
-      tags:
-        - "${DRONE_TAG}"
-        - latest
-      dockerfile: Dockerfile
-      context: .
+    commands:
+      # Docker Buildx 설정
+      - docker buildx create --use --name multiarch-builder || docker buildx use multiarch-builder
+      # GitHub Container Registry 로그인
+      - echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USERNAME" --password-stdin
+      # 멀티 플랫폼 빌드 및 푸시
+      - |
+        docker buildx build \
+          --platform linux/amd64,linux/arm64,linux/arm/v7 \
+          --tag ghcr.io/jhleee/backlog-mcp-server:${DRONE_TAG} \
+          --tag ghcr.io/jhleee/backlog-mcp-server:latest \
+          --push \
+          -f Dockerfile \
+          .
     when:
       event:
         - tag
     depends_on:
       - lint-and-check
+
+# Docker socket 볼륨 설정
+volumes:
+  - name: dockersock
+    host:
+      path: /var/run/docker.sock
 
 # 파이프라인 실행 조건
 trigger:
