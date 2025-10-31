@@ -3,8 +3,22 @@ type: docker
 name: default
 
 steps:
-  # push 또는 custom 이벤트 발생 시 실행
-  - name: build-and-push
+  # 의존성 체크 및 린트
+  - name: lint-and-check
+    image: python:3.11-slim
+    commands:
+      - pip install --no-cache-dir -r requirements.txt
+      - python -m py_compile fastapi_mcp_server.py
+      - echo "Build check completed successfully"
+    when:
+      event:
+        - push
+        - pull_request
+        - custom
+
+  # main/master 브랜치에 push 또는 custom 이벤트 시 도커 이미지 빌드 및 푸시
+  # 러너의 네이티브 아키텍처로 자동 빌드됨
+  - name: build-and-push-branch
     image: plugins/docker
     settings:
       registry: ghcr.io
@@ -15,21 +29,22 @@ steps:
         from_secret: github_token
       tags:
         - latest
-        - ${DRONE_COMMIT_SHA:0:8}
-        - ${DRONE_BRANCH}
-      # auto_tag가 ${DRONE_BRANCH}와 중복되므로 제거
-      # auto_tag: true
-      # auto_tag_suffix: ${DRONE_BUILD_NUMBER}
+        - "commit-${DRONE_COMMIT_SHA:0:8}"
+        - "${DRONE_BRANCH}"
+        - "${DRONE_STAGE_OS}-${DRONE_STAGE_ARCH}"
+      dockerfile: Dockerfile
+      context: .
     when:
-      # 이 스텝의 실행 조건을 여기에 명시
       event:
         - push
         - custom
-      branch: # 브랜치 조건을 스텝 레벨로 이동
+      branch:
         - master
         - main
+    depends_on:
+      - lint-and-check
 
-  # tag 이벤트 발생 시 실행
+  # 태그 이벤트 발생 시 도커 이미지 빌드 및 푸시
   - name: build-and-push-tag
     image: plugins/docker
     settings:
@@ -40,16 +55,22 @@ steps:
       password:
         from_secret: github_token
       tags:
-        - ${DRONE_TAG}
+        - "${DRONE_TAG}"
+        - "${DRONE_TAG}-${DRONE_STAGE_OS}-${DRONE_STAGE_ARCH}"
         - latest
+      dockerfile: Dockerfile
+      context: .
     when:
       event:
         - tag
+    depends_on:
+      - lint-and-check
 
-# 파이프라인 전체 실행 조건
+# 파이프라인 실행 조건
 trigger:
   event:
     - push
     - tag
+    - pull_request
     - custom
     - promote
